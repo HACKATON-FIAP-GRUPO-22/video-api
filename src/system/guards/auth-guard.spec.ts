@@ -1,73 +1,143 @@
-import { Reflector } from '@nestjs/core';
 import { ExecutionContext, UnauthorizedException } from '@nestjs/common';
-import { decryptObject } from '../../application/utils/crypto';
+import { Reflector } from '@nestjs/core';
+import { CognitoIdentityProviderClient } from '@aws-sdk/client-cognito-identity-provider';
 import { AuthGuard } from './authGuard';
 
-jest.mock('../../application/utils/crypto', () => ({
-  decryptObject: jest.fn(),
-}));
+jest.mock('@aws-sdk/client-cognito-identity-provider');
 
 describe('AuthGuard', () => {
-  let authGuard: AuthGuard;
-  let reflectorMock: Partial<Reflector>;
+  let guard: AuthGuard;
+  let reflector: Reflector;
 
-  beforeEach(() => {
-    reflectorMock = {
-      get: jest.fn(),
-    };
-
-    authGuard = new AuthGuard(reflectorMock as Reflector);
+  const mockRequest = (headers = {}) => ({
+    headers,
+    user: null,
   });
 
-  it('should be defined', () => {
-    expect(authGuard).toBeDefined();
+  const mockExecutionContext = (request: any): Partial<ExecutionContext> => ({
+    switchToHttp: () => ({
+      getRequest: () => request,
+      getResponse: () => ({}) as any,
+      getNext: () => ({}) as any,
+    }),
+  });
+
+  beforeEach(() => {
+    reflector = new Reflector();
+    guard = new AuthGuard(reflector);
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
   });
 
   describe('canActivate', () => {
-    const mockExecutionContext = (headers: Record<string, string>) =>
-      ({
-        switchToHttp: () => ({
-          getRequest: () => ({ headers }),
-        }),
-        getHandler: jest.fn(),
-      }) as unknown as ExecutionContext;
+    it('should throw UnauthorizedException if no token is provided', async () => {
+      const request = mockRequest({});
+      const context = mockExecutionContext(request);
 
-    it('should allow access if the route is public', () => {
-      (reflectorMock.get as jest.Mock).mockReturnValue(true);
+      await expect(
+        guard.canActivate(context as ExecutionContext),
+      ).rejects.toThrow(new UnauthorizedException('Token não encontrado'));
+    });
 
-      const context = mockExecutionContext({});
-      const result = authGuard.canActivate(context);
+    it('should throw UnauthorizedException if token is invalid', async () => {
+      const request = mockRequest({ authorization: 'Bearer invalid-token' });
+      const context = mockExecutionContext(request);
 
-      expect(result).toBe(true);
-      expect(reflectorMock.get).toHaveBeenCalledWith(
-        'isPublic',
-        context.getHandler(),
+      (
+        CognitoIdentityProviderClient.prototype.send as jest.Mock
+      ).mockRejectedValue(new Error('Invalid token'));
+
+      await expect(
+        guard.canActivate(context as ExecutionContext),
+      ).rejects.toThrow(
+        new UnauthorizedException('Token inválido ou expirado'),
       );
     });
 
-    it('should throw an UnauthorizedException if the token is invalid', () => {
-      (reflectorMock.get as jest.Mock).mockReturnValue(false);
+    it('should throw UnauthorizedException if user did not accept LGPD', async () => {
+      const request = mockRequest({ authorization: 'Bearer valid-token' });
+      const context = mockExecutionContext(request);
 
-      const context = mockExecutionContext({ user: 'invalid_token' });
-      (decryptObject as jest.Mock).mockImplementation(() => {
-        throw new Error('Invalid token');
+      (
+        CognitoIdentityProviderClient.prototype.send as jest.Mock
+      ).mockResolvedValue({
+        Username: 'user123',
+        UserAttributes: [
+          { Name: 'email', Value: 'user@example.com' },
+          { Name: 'custom:lgpd', Value: 'false' },
+        ],
       });
 
-      expect(() => authGuard.canActivate(context)).toThrow(
-        new UnauthorizedException('Token inválido'),
+      await expect(
+        guard.canActivate(context as ExecutionContext),
+      ).rejects.toThrow(
+        new UnauthorizedException('Usuário não aceitou os termos da LGPD'),
       );
     });
 
-    it('should allow access if a valid token is provided', () => {
-      (reflectorMock.get as jest.Mock).mockReturnValue(false);
+    it('should allow access if token is valid and user accepted LGPD', async () => {
+      const request = mockRequest({ authorization: 'Bearer valid-token' });
+      const context = mockExecutionContext(request);
 
-      const context = mockExecutionContext({ user: 'valid_token' });
-      (decryptObject as jest.Mock).mockReturnValue({ valid: true });
+      (
+        CognitoIdentityProviderClient.prototype.send as jest.Mock
+      ).mockResolvedValue({
+        Username: 'user123',
+        UserAttributes: [
+          { Name: 'email', Value: 'user@example.com' },
+          { Name: 'custom:lgpd', Value: 'true' },
+        ],
+      });
 
-      const result = authGuard.canActivate(context);
+      const result = await guard.canActivate(context as ExecutionContext);
 
       expect(result).toBe(true);
-      expect(decryptObject).toHaveBeenCalledWith('valid_token');
+      expect(request.user).toEqual({
+        id: 'user123',
+        email: 'user@example.com',
+      });
+    });
+  });
+
+  describe('extractToken', () => {
+    it('should extract token correctly from header', () => {
+      const request = mockRequest({ authorization: 'Bearer my-token' });
+
+      const token = (guard as any).extractToken(request);
+
+      expect(token).toBe('my-token');
+    });
+
+    it('should return null if token format is invalid', () => {
+      const request = mockRequest({ authorization: 'InvalidHeader' });
+
+      const token = (guard as any).extractToken(request);
+
+      expect(token).toBeNull();
+    });
+  });
+
+  describe('getUserAttributes', () => {
+    it('should return formatted attributes', async () => {
+      (
+        CognitoIdentityProviderClient.prototype.send as jest.Mock
+      ).mockResolvedValue({
+        Username: 'user123',
+        UserAttributes: [
+          { Name: 'email', Value: 'user@example.com' },
+          { Name: 'custom:lgpd', Value: 'true' },
+        ],
+      });
+
+      const result = await (guard as any).getUserAttributes('valid-token');
+
+      expect(result).toEqual({
+        username: 'user123',
+        email: 'user@example.com',
+        'custom:lgpd': 'true',
+      });
     });
   });
 });

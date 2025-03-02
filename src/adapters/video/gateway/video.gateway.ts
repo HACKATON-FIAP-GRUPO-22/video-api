@@ -4,8 +4,8 @@ import { Video } from '../../../application/video/entites/video';
 import { VideoEntity } from './video.entity';
 import { getEnumFromString } from '../../../application/video/entites/video.status';
 import { IVideoData } from '../../../application/video/interfaces/video.interface';
-import { VideoProcessed } from 'src/application/video/entites/video.processed';
-import { BusinessRuleException } from 'src/system/filtros/business-rule-exception';
+import { VideoProcessed } from '../../../application/video/entites/video.processed';
+import { BusinessRuleException } from '../../../system/filtros/business-rule-exception';
 
 export class VideoGateway implements IVideoData {
   constructor(

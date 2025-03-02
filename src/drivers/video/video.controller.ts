@@ -24,7 +24,7 @@ import { VideoAdapterController } from '../../adapters/video/controller/video.ad
 import { VideoDto } from '../../adapters/video/dto/video.dto';
 import { ErrorResponseBody } from '../../system/filtros/filter-exception-global';
 import { Response } from 'express';
-import { AuthGuard } from 'src/system/guards/authGuard';
+import { AuthGuard } from '../../system/guards/authGuard';
 
 @ApiTags('Vídeo')
 @ApiBadRequestResponse({

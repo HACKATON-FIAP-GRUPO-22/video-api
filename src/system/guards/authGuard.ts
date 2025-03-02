@@ -22,28 +22,28 @@ export class AuthGuard implements CanActivate {
         throw new UnauthorizedException('Token não encontrado');
       }
 
-      try {
-        const attributes = await this.getUserAttributes(token);
+      // try {
+      const attributes = await this.getUserAttributes(token);
 
-        if (attributes['custom:lgpd'] !== 'true') {
-          throw new UnauthorizedException(
-            'Usuário não aceitou os termos da LGPD',
-          );
-        }
-
-        request.user = {
-          id: attributes.username,
-          email: attributes.email,
-        };
-
-        return true;
-      } catch (error) {
-        console.log(error);
-        throw new UnauthorizedException('Token inválido ou expirado');
+      if (attributes['custom:lgpd'] !== 'true') {
+        throw new UnauthorizedException(
+          'Usuário não aceitou os termos da LGPD',
+        );
       }
+
+      request.user = {
+        id: attributes.username,
+        email: attributes.email,
+      };
+
+      return true;
+      // } catch (error) {
+      //   console.log(error);
+      //   throw new UnauthorizedException('Token inválido ou expirado');
+      // }
     } catch (error) {
       console.log(error);
-      throw new UnauthorizedException('Token inválido');
+      throw new UnauthorizedException(error.message);
     }
   }
 
@@ -53,25 +53,29 @@ export class AuthGuard implements CanActivate {
   }
 
   async getUserAttributes(accessToken: string) {
-    const command = new GetUserCommand({
-      AccessToken: accessToken,
-    });
+    try {
+      const command = new GetUserCommand({
+        AccessToken: accessToken,
+      });
 
-    const cognitoClient = new CognitoIdentityProviderClient({
-      region: process.env.AWS_REGION,
-    });
+      const cognitoClient = new CognitoIdentityProviderClient({
+        region: process.env.AWS_REGION,
+      });
 
-    const response = await cognitoClient.send(command);
+      const response = await cognitoClient.send(command);
 
-    const attributes = response.UserAttributes.reduce((acc, attr) => {
-      acc[attr.Name] = attr.Value;
-      return acc;
-    }, {});
+      const attributes = response.UserAttributes.reduce((acc, attr) => {
+        acc[attr.Name] = attr.Value;
+        return acc;
+      }, {});
 
-    return {
-      username: response.Username,
-      email: attributes['email'],
-      ...attributes,
-    };
+      return {
+        username: response.Username,
+        email: attributes['email'],
+        ...attributes,
+      };
+    } catch (error) {
+      throw new UnauthorizedException('Token inválido ou expirado');
+    }
   }
 }
