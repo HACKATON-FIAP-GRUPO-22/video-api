@@ -4,6 +4,8 @@ import { Video } from '../../../application/video/entites/video';
 import { VideoEntity } from './video.entity';
 import { getEnumFromString } from '../../../application/video/entites/video.status';
 import { IVideoData } from '../../../application/video/interfaces/video.interface';
+import { VideoProcessed } from 'src/application/video/entites/video.processed';
+import { BusinessRuleException } from 'src/system/filtros/business-rule-exception';
 
 export class VideoGateway implements IVideoData {
   constructor(
@@ -31,9 +33,35 @@ export class VideoGateway implements IVideoData {
     return videos;
   }
 
+  async getVideoById(idVideo: string): Promise<VideoEntity> {
+    const entity = await this.repository.findOneBy({ idVideo });
+    if (!entity) {
+      throw new BusinessRuleException('Categoria não localizada');
+    }
+
+    return entity;
+  }
+
+  async getVideoEntityById(idVideo: string): Promise<Video> {
+    const entity = await this.getVideoById(idVideo);
+    return this.convertDataToEntity(entity);
+  }
+
+  async updateStatusVideoProcessed(videoProcessed: VideoProcessed) {
+    const entity = await this.getVideoById(videoProcessed.id);
+    if (!entity) {
+      throw new BusinessRuleException('Categoria não localizada');
+    }
+
+    entity.status = videoProcessed.status;
+    entity.idVideoProcessed = videoProcessed.idVideoProcessed;
+    await this.repository.save(entity);
+  }
+
   private convertEntityTodata(video: Video) {
     const entity = new VideoEntity();
-    entity.path = video.path;
+    entity.idVideo = video.idVideo;
+    entity.idVideoProcessed = video.idVideoProcessed;
     entity.user = video.user;
     entity.userEmail = video.userEmail;
     entity.status = video.status;
@@ -45,8 +73,8 @@ export class VideoGateway implements IVideoData {
       return null;
     }
     const video = new Video();
-    video.id = videoEntity.id;
-    video.path = videoEntity.path;
+    video.idVideo = videoEntity.idVideo;
+    video.idVideoProcessed = videoEntity.idVideoProcessed;
     video.user = videoEntity.user;
     video.status = getEnumFromString(videoEntity.status);
     return video;

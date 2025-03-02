@@ -6,8 +6,8 @@ import { VideoDto } from '../dto/video.dto';
 export class VideoPresenter {
   convertEntityToResponseDto(entity: Video): VideoDto {
     const response = new VideoDto();
-    response.id = entity.id;
-    response.path = entity.path;
+    response.idVideo = entity.idVideo;
+    response.idVideoProcessed = entity.idVideoProcessed;
     response.user = entity.user;
     return response;
   }

@@ -1,13 +1,14 @@
 import {
+  CognitoIdentityProviderClient,
+  GetUserCommand,
+} from '@aws-sdk/client-cognito-identity-provider';
+import {
   CanActivate,
   ExecutionContext,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import axios from 'axios';
-import { JwtPayload, decode, verify } from 'jsonwebtoken';
-import jwkToPem from 'jwk-to-pem';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -17,48 +18,31 @@ export class AuthGuard implements CanActivate {
       const request = context.switchToHttp().getRequest();
 
       const token = this.extractToken(request);
-
       if (!token) {
         throw new UnauthorizedException('Token não encontrado');
       }
 
       try {
-        const decodedToken = decode(token, { complete: true }) as {
-          header: { kid: string };
-          payload: JwtPayload;
-        };
+        const attributes = await this.getUserAttributes(token);
 
-        if (!decodedToken) {
-          throw new UnauthorizedException('Token inválido');
-        }
-
-        const { kid } = decodedToken.header;
-
-        const publicKey = await this.getPublicKey(kid);
-        const payload = verify(token, publicKey, {
-          algorithms: ['RS256'],
-        }) as JwtPayload;
-
-        this.validateTokenClaims(payload);
-
-        request.user = {
-          id: payload.sub,
-          email: payload.email,
-        };
-
-        // Verificar se o usuário aceitou os termos da LGPD
-        if (payload['custom:lgpdConsent'] !== 'true') {
+        if (attributes['custom:lgpd'] !== 'true') {
           throw new UnauthorizedException(
             'Usuário não aceitou os termos da LGPD',
           );
         }
 
+        request.user = {
+          id: attributes.username,
+          email: attributes.email,
+        };
+
         return true;
       } catch (error) {
-        console.error('Erro ao validar o token:', error);
+        console.log(error);
         throw new UnauthorizedException('Token inválido ou expirado');
       }
     } catch (error) {
+      console.log(error);
       throw new UnauthorizedException('Token inválido');
     }
   }
@@ -68,38 +52,26 @@ export class AuthGuard implements CanActivate {
     return authHeader?.startsWith('Bearer ') ? authHeader.split(' ')[1] : null;
   }
 
-  private async getPublicKey(kid: string): Promise<string> {
-    const jwksUrl = `https://cognito-idp.${process.env.AWS_REGION}.amazonaws.com/${process.env.AWS_COGNITO_USER_POOL_ID}/.well-known/jwks.json`;
+  async getUserAttributes(accessToken: string) {
+    const command = new GetUserCommand({
+      AccessToken: accessToken,
+    });
 
-    try {
-      const { data } = await axios.get(jwksUrl);
-      const key = data.keys.find((key: any) => key.kid === kid);
+    const cognitoClient = new CognitoIdentityProviderClient({
+      region: process.env.AWS_REGION,
+    });
 
-      if (!key) {
-        throw new Error(`Chave pública não encontrada para kid: ${kid}`);
-      }
+    const response = await cognitoClient.send(command);
 
-      return jwkToPem(key);
-    } catch (error) {
-      throw new Error('Erro ao buscar o JWKS do Cognito');
-    }
-  }
+    const attributes = response.UserAttributes.reduce((acc, attr) => {
+      acc[attr.Name] = attr.Value;
+      return acc;
+    }, {});
 
-  private validateTokenClaims(payload: JwtPayload): void {
-    const { aud, iss, exp } = payload;
-
-    const expectedIssuer = `https://cognito-idp.${process.env.AWS_REGION}.amazonaws.com/${process.env.AWS_COGNITO_USER_POOL_ID}`;
-
-    if (iss !== expectedIssuer) {
-      throw new UnauthorizedException('Issuer inválido');
-    }
-
-    if (aud !== process.env.AWS_COGNITO_CLIENT_ID) {
-      throw new UnauthorizedException('Audience inválido');
-    }
-
-    if (exp && Date.now() >= exp * 1000) {
-      throw new UnauthorizedException('Token expirado');
-    }
+    return {
+      username: response.Username,
+      email: attributes['email'],
+      ...attributes,
+    };
   }
 }

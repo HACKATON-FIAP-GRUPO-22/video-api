@@ -6,18 +6,18 @@ export async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   const config = new DocumentBuilder()
-    .setTitle('Lanchonete 5 amigos')
-    .setDescription('Lanchonete de bairro')
+    .setTitle('Hackaton')
+    .setDescription('Hackaton grupo 22')
     .setVersion('1.0')
-    // .addBearerAuth(
-    //   {
-    //     type: 'http',
-    //     scheme: 'bearer',
-    //     bearerFormat: 'JWT',
-    //   },
-    //   'access-token',
-    // )
-    .addTag('Lanchonete')
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+      },
+      'access-token',
+    )
+    .addTag('Hackaton')
     .addServer('http://localhost:3000')
     .build();
   const document = SwaggerModule.createDocument(app, config);

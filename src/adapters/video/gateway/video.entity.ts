@@ -12,13 +12,16 @@ export class VideoEntity {
   @PrimaryGeneratedColumn('increment')
   id: number;
 
-  @Column({ name: 'path', length: 100, nullable: false })
-  path: string;
+  @Column({ name: 'id_video', length: 100, nullable: true })
+  idVideo: string;
 
-  @Column({ name: 'user', length: 100, nullable: false })
+  @Column({ name: 'id_video_processed', length: 100, nullable: true })
+  idVideoProcessed: string;
+
+  @Column({ name: 'user', length: 100, nullable: true })
   user: string;
 
-  @Column({ name: 'user_email', length: 100, nullable: false })
+  @Column({ name: 'user_email', length: 100, nullable: true })
   userEmail: string;
 
   @Column({

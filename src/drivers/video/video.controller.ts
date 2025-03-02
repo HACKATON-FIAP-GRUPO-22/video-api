@@ -8,11 +8,13 @@ import {
   Req,
   Res,
   UploadedFile,
+  UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
   ApiBadRequestResponse,
+  ApiBearerAuth,
   ApiBody,
   ApiConsumes,
   ApiInternalServerErrorResponse,
@@ -22,6 +24,7 @@ import { VideoAdapterController } from '../../adapters/video/controller/video.ad
 import { VideoDto } from '../../adapters/video/dto/video.dto';
 import { ErrorResponseBody } from '../../system/filtros/filter-exception-global';
 import { Response } from 'express';
+import { AuthGuard } from 'src/system/guards/authGuard';
 
 @ApiTags('Vídeo')
 @ApiBadRequestResponse({
@@ -30,8 +33,8 @@ import { Response } from 'express';
 })
 @ApiInternalServerErrorResponse({ description: 'Erro do servidor' })
 @Controller('video')
-// @ApiBearerAuth('access_token')
-// @UseGuards(AuthGuard)
+@ApiBearerAuth('access-token')
+@UseGuards(AuthGuard)
 export class VideoController {
   constructor(private readonly adapter: VideoAdapterController) {}
 

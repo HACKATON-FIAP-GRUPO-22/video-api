@@ -88,3 +88,6 @@ aws cognito-idp initiate-auth \
   --auth-parameters USERNAME=34182012020,PASSWORD=12345678!
 
   aws eks update-kubeconfig --region us-east-1 --name cluster-fiap
+
+
+  {"id": "a1da5271-a104-42ff-b10b-a53ef0539329", "status": "pronto" }

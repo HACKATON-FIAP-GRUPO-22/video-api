@@ -2,7 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class VideoDto {
   @ApiProperty()
-  id: number;
+  idVideo: string;
 
   @ApiProperty({
     description: 'Path do caminho do arquivo',
@@ -14,7 +14,7 @@ export class VideoDto {
       },
     },
   })
-  path: string;
+  idVideoProcessed: string;
 
   @ApiProperty({
     description: 'Usuário que fez o upload do vídeo',

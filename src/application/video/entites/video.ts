@@ -1,8 +1,8 @@
 import { VideoStatus } from './video.status';
 
 export class Video {
-  id: number;
-  path: string;
+  idVideo: string;
+  idVideoProcessed: string;
   user: string;
   userEmail: string;
   createdAt: string;
