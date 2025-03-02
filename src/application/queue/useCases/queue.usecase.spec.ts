@@ -3,6 +3,7 @@ import {
   SQSClient,
   SendMessageCommand,
   ReceiveMessageCommand,
+  DeleteMessageCommand,
 } from '@aws-sdk/client-sqs';
 import { IVideoUseCase } from 'src/application/video/interfaces/video.usecase.interface';
 
@@ -14,6 +15,7 @@ jest.mock('@aws-sdk/client-sqs', () => {
     })),
     SendMessageCommand: jest.fn(),
     ReceiveMessageCommand: jest.fn(),
+    DeleteMessageCommand: jest.fn(),
   };
 });
 
@@ -23,7 +25,7 @@ describe('QueueUseCase', () => {
   let videoUseCaseMock: jest.Mocked<IVideoUseCase>;
 
   beforeEach(() => {
-    // Mock do IVideoUseCase (não usado diretamente nesses testes, mas necessário pro construtor)
+    // Mock do IVideoUseCase
     videoUseCaseMock = {
       updateStatusVideoProcessed: jest.fn(),
     } as any;
@@ -32,7 +34,7 @@ describe('QueueUseCase', () => {
     sqsClientMock = new SQSClient({}) as jest.Mocked<SQSClient>;
     (SQSClient as jest.Mock).mockImplementation(() => sqsClientMock);
 
-    // Instancia a classe testada
+    // Instancia a classe que será testada
     queueUseCase = new QueueUseCase(videoUseCaseMock);
   });
 
@@ -40,7 +42,6 @@ describe('QueueUseCase', () => {
     it('should send video message to SQS', async () => {
       const messageBody = 'test-message-body';
 
-      // Simula sucesso no envio
       (sqsClientMock.send as jest.Mock).mockResolvedValue({});
 
       await queueUseCase.sendVideo(messageBody);
@@ -75,7 +76,6 @@ describe('QueueUseCase', () => {
     it('should receive messages from SQS', async () => {
       const messages = [{ Body: 'test-body', ReceiptHandle: 'receipt' }];
 
-      // Simula a resposta da fila
       (sqsClientMock.send as jest.Mock).mockResolvedValue({
         Messages: messages,
       });
@@ -96,7 +96,6 @@ describe('QueueUseCase', () => {
     });
 
     it('should return empty array if no messages', async () => {
-      // Simula fila vazia
       (sqsClientMock.send as jest.Mock).mockResolvedValue({
         Messages: undefined,
       });
@@ -104,6 +103,40 @@ describe('QueueUseCase', () => {
       const result = await queueUseCase.getVideosForProcess();
 
       expect(result).toEqual([]);
+    });
+  });
+
+  describe('deleteVideoQueue', () => {
+    it('should delete video message from SQS', async () => {
+      const receiptHandle = 'test-receipt-handle';
+
+      (sqsClientMock.send as jest.Mock).mockResolvedValue({});
+
+      await queueUseCase.deleteVideoQueue(receiptHandle);
+
+      expect(DeleteMessageCommand).toHaveBeenCalledWith({
+        QueueUrl: process.env.QUEUE_PROCESSADOS,
+        ReceiptHandle: receiptHandle,
+      });
+
+      expect(sqsClientMock.send).toHaveBeenCalledWith(
+        expect.any(DeleteMessageCommand),
+      );
+    });
+
+    it('should log the deleted message', async () => {
+      const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
+      const receiptHandle = 'test-receipt-handle';
+
+      (sqsClientMock.send as jest.Mock).mockResolvedValue({});
+
+      await queueUseCase.deleteVideoQueue(receiptHandle);
+
+      expect(consoleSpy).toHaveBeenCalledWith(
+        `Mensagem deletada: ${receiptHandle}`,
+      );
+
+      consoleSpy.mockRestore();
     });
   });
 });

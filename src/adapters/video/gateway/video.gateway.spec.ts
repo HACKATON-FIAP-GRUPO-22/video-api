@@ -96,14 +96,14 @@ describe('VideoGateway', () => {
     it('should return video domain object by id', async () => {
       const videoEntity = new VideoEntity();
       videoEntity.idVideo = '123';
-      videoEntity.status = 'PROCESSING';
+      videoEntity.status = 'pendente';
 
       (repositoryMock.findOneBy as jest.Mock).mockResolvedValue(videoEntity);
 
       const result = await gateway.getVideoEntityById('123');
 
       expect(result.idVideo).toBe('123');
-      expect(result.status).toBe(getEnumFromString('PROCESSING'));
+      expect(result.status).toBe(getEnumFromString('pendente'));
     });
   });
 
@@ -111,7 +111,7 @@ describe('VideoGateway', () => {
     it('should update video status', async () => {
       const videoProcessed = new VideoProcessed();
       videoProcessed.id = '123';
-      videoProcessed.status = 'PROCESSED';
+      videoProcessed.status = 'pronto';
       videoProcessed.idVideoProcessed = 'VID_PROCESSED_123';
 
       const videoEntity = new VideoEntity();
@@ -125,7 +125,7 @@ describe('VideoGateway', () => {
       expect(repositoryMock.save).toHaveBeenCalledWith(
         expect.objectContaining({
           idVideoProcessed: 'VID_PROCESSED_123',
-          status: 'PROCESSED',
+          status: 'pronto',
         }),
       );
     });
