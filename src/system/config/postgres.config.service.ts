@@ -22,6 +22,7 @@ export class PostgresConfigService implements TypeOrmOptionsFactory {
       },
       migrationsRun: true,
       migrations: [__dirname + '/../db/migrations/**/*{.ts,.js}'],
+      name: 'default',
     };
   }
 }

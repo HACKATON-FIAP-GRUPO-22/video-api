@@ -36,7 +36,7 @@ export class VideoGateway implements IVideoData {
   async getVideoById(idVideo: string): Promise<VideoEntity> {
     const entity = await this.repository.findOneBy({ idVideo });
     if (!entity) {
-      throw new BusinessRuleException('Categoria não localizada');
+      throw new BusinessRuleException('Vídeo não localizado');
     }
 
     return entity;
@@ -50,12 +50,16 @@ export class VideoGateway implements IVideoData {
   async updateStatusVideoProcessed(videoProcessed: VideoProcessed) {
     const entity = await this.getVideoById(videoProcessed.id);
     if (!entity) {
-      throw new BusinessRuleException('Categoria não localizada');
+      throw new BusinessRuleException('Vídeo não localizado');
     }
 
     entity.status = videoProcessed.status;
     entity.idVideoProcessed = videoProcessed.idVideoProcessed;
     await this.repository.save(entity);
+  }
+
+  async deleteVideo(idVideo: string): Promise<void> {
+    await this.repository.delete({ idVideo });
   }
 
   private convertEntityTodata(video: Video) {

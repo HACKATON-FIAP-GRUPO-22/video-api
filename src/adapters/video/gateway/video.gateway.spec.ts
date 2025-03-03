@@ -87,7 +87,7 @@ describe('VideoGateway', () => {
       (repositoryMock.findOneBy as jest.Mock).mockResolvedValue(null);
 
       await expect(gateway.getVideoById('123')).rejects.toThrow(
-        new BusinessRuleException('Categoria não localizada'),
+        new BusinessRuleException('Vídeo não localizado'),
       );
     });
   });
@@ -138,7 +138,7 @@ describe('VideoGateway', () => {
 
       await expect(
         gateway.updateStatusVideoProcessed(videoProcessed),
-      ).rejects.toThrow(new BusinessRuleException('Categoria não localizada'));
+      ).rejects.toThrow(new BusinessRuleException('Vídeo não localizado'));
     });
   });
 

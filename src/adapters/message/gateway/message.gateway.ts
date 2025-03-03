@@ -4,13 +4,17 @@ import {
   SESClient,
 } from '@aws-sdk/client-ses';
 import { Inject, Injectable } from '@nestjs/common';
-import { IEmailUseCase } from '../interfaces/email.interface';
+import { IMessageGateway } from '../../../application/message/interfaces/message.gateway';
 
 @Injectable()
-export class EmailUseCase implements IEmailUseCase {
+export class MessageGateway implements IMessageGateway {
   constructor(@Inject('SES_CLIENT') private readonly sesClient: SESClient) {}
 
-  async sendEmail(to: string[], subject: string, body: string): Promise<void> {
+  async sendMessage(
+    to: string[],
+    subject: string,
+    body: string,
+  ): Promise<void> {
     console.log('EmailService: Enviando email para ' + to);
 
     const input: SendEmailCommandInput = {

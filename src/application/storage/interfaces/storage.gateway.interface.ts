@@ -1,6 +1,6 @@
 import { Readable } from 'stream';
 
-export abstract class IS3UseCase {
+export abstract class IStorageGateway {
   abstract uploadFile(
     id: string,
     fileBuffer: Buffer,
@@ -8,4 +8,5 @@ export abstract class IS3UseCase {
   ): Promise<void>;
 
   abstract downloadFile(id: string): Promise<Readable>;
+  abstract deleteFile(id: string): Promise<void>;
 }

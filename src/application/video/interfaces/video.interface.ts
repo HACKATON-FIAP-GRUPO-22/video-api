@@ -6,6 +6,7 @@ export abstract class IVideoData {
   abstract convertCreateEntity(file, userName, userEmail): Video;
   abstract getVideosByUser(user: string): Promise<Video[]>;
   abstract getVideoEntityById(id: string): Promise<Video>;
+  abstract deleteVideo(idVideo: string): Promise<void>;
   abstract updateStatusVideoProcessed(
     videoProcessed: VideoProcessed,
   ): Promise<void>;

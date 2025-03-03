@@ -1,56 +1,53 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { Readable } from 'stream';
-import { IEmailUseCase } from '../../../application/email/interfaces/email.interface';
-import { IQueueUseCase } from '../../../application/queue/interfaces/queue.usecase.interfaces';
-import { IS3UseCase } from '../../../application/s3/interfaces/s3.interface';
-import { Video } from '../entites/video';
-import { VideoProcessed } from '../entites/video.processed';
+import { VideoUseCase } from './video.usecase';
 import { IVideoData } from '../interfaces/video.interface';
-import { VideoUseCase } from './video.usecase'; // ajuste o caminho
-
-jest.mock('uuid', () => ({
-  v4: jest.fn().mockReturnValue('mocked-uuid'),
-}));
+import { IStorageUseCase } from '../../storage/interfaces/storage.interface';
+import { ITaskUseCase } from '../../task/interfaces/task.usecase.interfaces';
+import { IMessageUseCase } from '../../message/interfaces/message.interface';
+import { Video } from '../entites/video';
+import { Readable } from 'stream';
+import { VideoProcessed } from '../entites/video.processed';
+import { BusinessRuleException } from '../../../system/filtros/business-rule-exception';
 
 describe('VideoUseCase', () => {
   let useCase: VideoUseCase;
-
-  // Mocks
   let persistMock: jest.Mocked<IVideoData>;
-  let emailMock: jest.Mocked<IEmailUseCase>;
-  let s3Mock: jest.Mocked<IS3UseCase>;
-  let queueMock: jest.Mocked<IQueueUseCase>;
+  let storageMock: jest.Mocked<IStorageUseCase>;
+  let taskMock: jest.Mocked<ITaskUseCase>;
+  let messageMock: jest.Mocked<IMessageUseCase>;
 
   beforeEach(async () => {
     persistMock = {
       save: jest.fn(),
+      convertCreateEntity: jest.fn(),
+      deleteVideo: jest.fn(),
       getVideosByUser: jest.fn(),
       getVideoEntityById: jest.fn(),
-      convertCreateEntity: jest.fn(),
       updateStatusVideoProcessed: jest.fn(),
     };
 
-    emailMock = {
-      sendEmail: jest.fn(),
-    };
-
-    s3Mock = {
+    storageMock = {
       uploadFile: jest.fn(),
       downloadFile: jest.fn(),
+      deleteFile: jest.fn(),
     };
 
-    queueMock = {
+    taskMock = {
       sendVideo: jest.fn(),
-      onModuleInit: jest.fn(),
+      processListVideos: jest.fn(),
+    };
+
+    messageMock = {
+      sendMessageErrorVideoProcessed: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         VideoUseCase,
         { provide: IVideoData, useValue: persistMock },
-        { provide: IEmailUseCase, useValue: emailMock },
-        { provide: IS3UseCase, useValue: s3Mock },
-        { provide: IQueueUseCase, useValue: queueMock },
+        { provide: IStorageUseCase, useValue: storageMock },
+        { provide: ITaskUseCase, useValue: taskMock },
+        { provide: IMessageUseCase, useValue: messageMock },
       ],
     }).compile();
 
@@ -58,28 +55,61 @@ describe('VideoUseCase', () => {
   });
 
   describe('save', () => {
-    it('should upload file, send to queue and persist video', async () => {
+    it('should save video and send to queue', async () => {
+      const fileMock = {
+        originalname: 'video.mp4',
+        buffer: Buffer.from('file-content'),
+        mimetype: 'video/mp4',
+      };
+
       const video = new Video();
-      video.file = { buffer: Buffer.from('file'), mimetype: 'video/mp4' };
+      video.file = fileMock;
 
       persistMock.save.mockResolvedValue(video);
 
       const result = await useCase.save(video);
 
-      expect(s3Mock.uploadFile).toHaveBeenCalledWith(
-        'mocked-uuid',
-        video.file.buffer,
-        video.file.mimetype,
+      expect(storageMock.uploadFile).toHaveBeenCalledWith(
+        expect.stringMatching(/video\.mp4_/),
+        fileMock.buffer,
+        fileMock.mimetype,
       );
-      expect(queueMock.sendVideo).toHaveBeenCalledWith('mocked-uuid');
-      expect(persistMock.save).toHaveBeenCalledWith(video);
+      expect(persistMock.save).toHaveBeenCalledWith(
+        expect.objectContaining({ idVideo: expect.any(String) }),
+      );
+      expect(taskMock.sendVideo).toHaveBeenCalledWith(
+        expect.stringMatching(/video\.mp4_/),
+      );
+      expect(result).toBe(video);
+    });
 
-      expect(result).toEqual(video);
+    it('should handle failure by deleting file and video record', async () => {
+      const fileMock = {
+        originalname: 'video.mp4',
+        buffer: Buffer.from('file-content'),
+        mimetype: 'video/mp4',
+      };
+
+      const video = new Video();
+      video.file = fileMock;
+
+      storageMock.uploadFile.mockRejectedValue(new Error('Upload failed'));
+
+      await expect(useCase.save(video)).rejects.toThrow(
+        new BusinessRuleException('Erro ao tentar salvar o vídeo'),
+      );
+
+      expect(storageMock.deleteFile).toHaveBeenCalledWith(
+        expect.stringMatching(/video\.mp4_/),
+      );
+      expect(persistMock.deleteVideo).toHaveBeenCalledWith(
+        expect.stringMatching(/video\.mp4_/),
+      );
     });
   });
 
   describe('getVideosByUser', () => {
-    it('should get videos by user', async () => {
+    it('should fetch videos for a user', async () => {
       const videos = [new Video()];
       persistMock.getVideosByUser.mockResolvedValue(videos);
 
@@ -91,27 +121,26 @@ describe('VideoUseCase', () => {
   });
 
   describe('downloadFile', () => {
-    it('should call S3 to download file', async () => {
+    it('should download file from storage', async () => {
       const stream = new Readable();
-      s3Mock.downloadFile.mockResolvedValue(stream);
+      storageMock.downloadFile.mockResolvedValue(stream);
 
-      const result = await useCase.downloadFile('video-id');
+      const result = await useCase.downloadFile('video.mp4');
 
-      expect(s3Mock.downloadFile).toHaveBeenCalledWith('video-id');
+      expect(storageMock.downloadFile).toHaveBeenCalledWith('video.mp4');
       expect(result).toBe(stream);
     });
   });
 
   describe('updateStatusVideoProcessed', () => {
-    it('should call update and send email if status is "erro"', async () => {
-      const videoProcessed: VideoProcessed = {
-        id: 'video-id',
-        status: 'erro',
-        idVideoProcessed: 'processed-id',
-      };
+    it('should update video status and send error message if status is "erro"', async () => {
+      const videoProcessed = new VideoProcessed();
+      videoProcessed.id = 'video.mp4';
+      videoProcessed.status = 'erro';
 
       const video = new Video();
-      video.userEmail = 'user@example.com';
+      video.userEmail = 'user@email.com';
+
       persistMock.getVideoEntityById.mockResolvedValue(video);
 
       await useCase.updateStatusVideoProcessed(videoProcessed);
@@ -119,26 +148,24 @@ describe('VideoUseCase', () => {
       expect(persistMock.updateStatusVideoProcessed).toHaveBeenCalledWith(
         videoProcessed,
       );
-      expect(emailMock.sendEmail).toHaveBeenCalledWith(
-        ['user@example.com'],
+      expect(messageMock.sendMessageErrorVideoProcessed).toHaveBeenCalledWith(
+        ['user@email.com'],
         'Fiap: Erro ao processar vídeo',
-        'Aconteceu uma falha e o vídeo video-id não foi processado:',
+        expect.stringContaining('video.mp4'),
       );
     });
 
-    it('should not send email if status is not "erro"', async () => {
-      const videoProcessed: VideoProcessed = {
-        id: 'video-id',
-        status: 'processado',
-        idVideoProcessed: 'processed-id',
-      };
+    it('should not send error message if status is not "erro"', async () => {
+      const videoProcessed = new VideoProcessed();
+      videoProcessed.id = 'video.mp4';
+      videoProcessed.status = 'processado';
 
       await useCase.updateStatusVideoProcessed(videoProcessed);
 
-      expect(emailMock.sendEmail).not.toHaveBeenCalled();
       expect(persistMock.updateStatusVideoProcessed).toHaveBeenCalledWith(
         videoProcessed,
       );
+      expect(messageMock.sendMessageErrorVideoProcessed).not.toHaveBeenCalled();
     });
   });
 });

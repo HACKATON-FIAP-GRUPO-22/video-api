@@ -9,14 +9,14 @@ export async function bootstrap() {
     .setTitle('Hackaton')
     .setDescription('Hackaton grupo 22')
     .setVersion('1.0')
-    .addBearerAuth(
-      {
-        type: 'http',
-        scheme: 'bearer',
-        bearerFormat: 'JWT',
-      },
-      'access-token',
-    )
+    // .addBearerAuth(
+    //   {
+    //     type: 'http',
+    //     scheme: 'bearer',
+    //     bearerFormat: 'JWT',
+    //   },
+    //   'access-token',
+    // )
     .addTag('Hackaton')
     .addServer('http://localhost:3000')
     .build();

@@ -1,32 +1,58 @@
 import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { Readable } from 'stream';
 import { v4 as uuidv4 } from 'uuid';
-import { IEmailUseCase } from '../../../application/email/interfaces/email.interface';
-import { IQueueUseCase } from '../../../application/queue/interfaces/queue.usecase.interfaces';
-import { IS3UseCase } from '../../../application/s3/interfaces/s3.interface';
+import { ITaskUseCase } from '../../task/interfaces/task.usecase.interfaces';
+import { IStorageUseCase } from '../../storage/interfaces/storage.interface';
 import { Video } from '../entites/video';
 import { IVideoData } from '../interfaces/video.interface';
 import { IVideoUseCase } from '../interfaces/video.usecase.interface';
 import { VideoProcessed } from './../entites/video.processed';
+import { BusinessRuleException } from '../../../system/filtros/business-rule-exception';
+import { IMessageUseCase } from '../../../application/message/interfaces/message.interface';
 
 @Injectable()
 export class VideoUseCase implements IVideoUseCase {
   constructor(
     @Inject(forwardRef(() => IVideoData))
     private persist: IVideoData,
-    private email: IEmailUseCase,
-    private s3: IS3UseCase,
-    private queue: IQueueUseCase,
+    private message: IMessageUseCase,
+    private storage: IStorageUseCase,
+    private task: ITaskUseCase,
   ) {}
 
   async save(video: Video): Promise<Video> {
-    const idVideoS3 = uuidv4();
+    const idVideo = `${video.file.originalname}_${uuidv4()}`;
+    video.idVideo = idVideo;
 
-    await this.s3.uploadFile(idVideoS3, video.file.buffer, video.file.mimetype);
-    video.idVideo = idVideoS3;
-    this.queue.sendVideo(idVideoS3);
+    try {
+      await this.storage.uploadFile(
+        idVideo,
+        video.file.buffer,
+        video.file.mimetype,
+      );
+      const videoSave = await this.persist.save(video);
+      await this.task.sendVideo(idVideo);
+      return videoSave;
+    } catch (error) {
+      this.handleFailure(idVideo, error);
+      throw new BusinessRuleException('Erro ao tentar salvar o vídeo');
+    }
+  }
 
-    return this.persist.save(video);
+  private async handleFailure(idVideo: string, error: any): Promise<void> {
+    console.log(error);
+    console.warn(`Erro ao salvar o vídeo: ${error.message}`);
+    try {
+      await this.storage.deleteFile(idVideo);
+    } catch (s3Error) {
+      console.warn(`Erro ao excluir o vídeo ${idVideo}:`, s3Error.message);
+    }
+
+    try {
+      await this.persist.deleteVideo(idVideo);
+    } catch (error) {
+      console.warn(`Falha deletar o video ${idVideo}:`, error.message);
+    }
   }
 
   async getVideosByUser(user: string): Promise<Video[]> {
@@ -34,21 +60,21 @@ export class VideoUseCase implements IVideoUseCase {
   }
 
   async downloadFile(id: string): Promise<Readable> {
-    return await this.s3.downloadFile(id);
+    return await this.storage.downloadFile(id);
   }
 
   async updateStatusVideoProcessed(
     videoProcessed: VideoProcessed,
   ): Promise<void> {
-    this.sendEmailError(videoProcessed);
+    this.sendMessageErroVideoProcessed(videoProcessed);
     this.persist.updateStatusVideoProcessed(videoProcessed);
   }
 
-  private async sendEmailError(videoProcessed: VideoProcessed) {
+  private async sendMessageErroVideoProcessed(videoProcessed: VideoProcessed) {
     if (videoProcessed.status === 'erro') {
       const video = await this.persist.getVideoEntityById(videoProcessed.id);
 
-      this.email.sendEmail(
+      this.message.sendMessageErrorVideoProcessed(
         [video.userEmail],
         'Fiap: Erro ao processar vídeo',
         `Aconteceu uma falha e o vídeo ${videoProcessed.id} não foi processado:`,

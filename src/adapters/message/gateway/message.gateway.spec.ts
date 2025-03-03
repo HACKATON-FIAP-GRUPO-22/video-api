@@ -1,9 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { EmailUseCase } from './email.usecase'; // ajuste o caminho conforme necessário
 import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
+import { MessageGateway } from './message.gateway';
 
-describe('EmailUseCase', () => {
-  let emailUseCase: EmailUseCase;
+describe('MessageGateway', () => {
+  let messageGateway: MessageGateway;
   let sesClientMock: Partial<SESClient>;
 
   beforeEach(async () => {
@@ -13,7 +13,7 @@ describe('EmailUseCase', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        EmailUseCase,
+        MessageGateway,
         {
           provide: 'SES_CLIENT',
           useValue: sesClientMock,
@@ -21,7 +21,7 @@ describe('EmailUseCase', () => {
       ],
     }).compile();
 
-    emailUseCase = module.get<EmailUseCase>(EmailUseCase);
+    messageGateway = module.get<MessageGateway>(MessageGateway);
   });
 
   afterEach(() => {
@@ -38,7 +38,7 @@ describe('EmailUseCase', () => {
 
       (sesClientMock.send as jest.Mock).mockResolvedValue({});
 
-      await emailUseCase.sendEmail(to, subject, body);
+      await messageGateway.sendMessage(to, subject, body);
 
       expect(sesClientMock.send).toHaveBeenCalledWith(
         expect.any(SendEmailCommand),
@@ -76,7 +76,11 @@ describe('EmailUseCase', () => {
       );
 
       await expect(
-        emailUseCase.sendEmail(['recipient@example.com'], 'Subject', 'Body'),
+        messageGateway.sendMessage(
+          ['recipient@example.com'],
+          'Subject',
+          'Body',
+        ),
       ).rejects.toThrow('SES Error');
 
       expect(sesClientMock.send).toHaveBeenCalled();

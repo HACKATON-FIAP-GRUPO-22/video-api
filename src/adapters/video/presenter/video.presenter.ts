@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Video } from 'src/application/video/entites/video';
+import { Video } from '../../../application/video/entites/video';
 import { VideoDto } from '../dto/video.dto';
 
 @Injectable()

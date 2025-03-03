@@ -1,16 +1,16 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { S3UseCase } from './s3.usecase'; // ajuste o caminho conforme necessário
 import {
   GetObjectCommand,
   PutObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3';
 import { Readable } from 'stream';
+import { StorageGateway } from './storage.gateway';
 
 jest.mock('@aws-sdk/client-s3');
 
-describe('S3UseCase', () => {
-  let s3UseCase: S3UseCase;
+describe('StorageGateway', () => {
+  let s3UseCase: StorageGateway;
   let s3ClientMock: jest.Mocked<S3Client>;
 
   beforeEach(async () => {
@@ -24,12 +24,12 @@ describe('S3UseCase', () => {
     }));
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [S3UseCase],
+      providers: [StorageGateway],
     }).compile();
 
-    s3UseCase = module.get<S3UseCase>(S3UseCase);
+    s3UseCase = module.get<StorageGateway>(StorageGateway);
 
-    // Pegando o mock real do S3Client dentro da S3UseCase
+    // Pegando o mock real do S3Client dentro da StorageGateway
     s3ClientMock = s3UseCase['s3'] as jest.Mocked<S3Client>;
   });
 

@@ -1,15 +1,15 @@
 import {
+  DeleteObjectCommand,
   GetObjectCommand,
   PutObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3';
-import { Injectable } from '@nestjs/common';
 import { Readable } from 'stream';
-import { IS3UseCase } from '../interfaces/s3.interface';
+import { IStorageGateway } from '../../../application/storage/interfaces/storage.gateway.interface';
 
-@Injectable()
-export class S3UseCase implements IS3UseCase {
+export class StorageGateway implements IStorageGateway {
   private s3: S3Client;
+  private bucketName: string;
 
   constructor() {
     this.s3 = new S3Client({
@@ -19,6 +19,7 @@ export class S3UseCase implements IS3UseCase {
         secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
       },
     });
+    this.bucketName = process.env.AWS_S3_BUCKET_NAME;
   }
 
   async uploadFile(
@@ -26,10 +27,8 @@ export class S3UseCase implements IS3UseCase {
     fileBuffer: Buffer,
     mimeType: string,
   ): Promise<void> {
-    const bucketName = process.env.AWS_S3_BUCKET_NAME;
-
     const params = {
-      Bucket: bucketName,
+      Bucket: this.bucketName,
       Key: id,
       Body: fileBuffer,
       ContentType: mimeType,
@@ -41,10 +40,8 @@ export class S3UseCase implements IS3UseCase {
   }
 
   async downloadFile(id: string): Promise<Readable> {
-    const bucketName = process.env.AWS_S3_BUCKET_NAME;
-
     const params = {
-      Bucket: bucketName,
+      Bucket: this.bucketName,
       Key: id,
     };
 
@@ -52,5 +49,16 @@ export class S3UseCase implements IS3UseCase {
     const response = await this.s3.send(command);
 
     return response.Body as Readable;
+  }
+
+  async deleteFile(id: string): Promise<void> {
+    const params = {
+      Bucket: this.bucketName,
+      Key: id,
+    };
+
+    const command = new DeleteObjectCommand(params);
+
+    await this.s3.send(command);
   }
 }

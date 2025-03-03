@@ -1,5 +1,5 @@
-export abstract class IEmailUseCase {
-  abstract sendEmail(
+export abstract class IMessageGateway {
+  abstract sendMessage(
     to: string[],
     subject: string,
     body: string,

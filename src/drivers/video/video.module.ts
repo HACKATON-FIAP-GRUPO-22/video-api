@@ -8,18 +8,26 @@ import { IVideoUseCase } from '../../application/video/interfaces/video.usecase.
 import { VideoUseCase } from '../../application/video/useCases/video.usecase';
 import { IVideoData } from '../../application/video/interfaces/video.interface';
 import { VideoGateway } from '../../adapters/video/gateway/video.gateway';
-import { IQueueUseCase } from '../../application/queue/interfaces/queue.usecase.interfaces';
-import { QueueUseCase } from '../../application/queue/useCases/queue.usecase';
-import { IEmailUseCase } from 'src/application/email/interfaces/email.interface';
-import { EmailUseCase } from 'src/application/email/useCases/email.usecase';
+import { ITaskUseCase } from '../../application/task/interfaces/task.usecase.interfaces';
+import { TaskUseCase } from '../../application/task/useCases/task.usecase';
 import { SESClient } from '@aws-sdk/client-ses';
-import { IS3UseCase } from 'src/application/s3/interfaces/s3.interface';
-import { S3UseCase } from 'src/application/s3/useCases/s3.usecase';
+import { IStorageUseCase } from '../../application/storage/interfaces/storage.interface';
+import { StorageUseCase } from '../../application/storage/useCases/storage.usecase';
+import { IStorageGateway } from '../../application/storage/interfaces/storage.gateway.interface';
+import { IMessageUseCase } from '../../application/message/interfaces/message.interface';
+import { MessageUseCase } from '../../application/message/useCases/message.usecase';
+import { IMessageGateway } from '../../application/message/interfaces/message.gateway';
+import { MessageGateway } from '../../adapters/message/gateway/message.gateway';
+import { ITaskGateway } from '../../application/task/interfaces/task.gateway.interfaces';
+import { TaskGateway } from '../../adapters/task/gateway/task.gateway';
+import { StorageGateway } from '../../adapters/storage/gateway/storage.gateway';
+import { TaskController } from '../../adapters/task/controller/task.adapter.controller';
 
 @Module({
   imports: [TypeOrmModule.forFeature([VideoEntity])],
   controllers: [VideoController],
   providers: [
+    TaskController,
     {
       provide: VideoAdapterController,
       useClass: VideoAdapterController,
@@ -37,16 +45,28 @@ import { S3UseCase } from 'src/application/s3/useCases/s3.usecase';
       useClass: VideoGateway,
     },
     {
-      provide: IQueueUseCase,
-      useClass: QueueUseCase,
+      provide: ITaskUseCase,
+      useClass: TaskUseCase,
     },
     {
-      provide: IEmailUseCase,
-      useClass: EmailUseCase,
+      provide: IMessageUseCase,
+      useClass: MessageUseCase,
     },
     {
-      provide: IS3UseCase,
-      useClass: S3UseCase,
+      provide: IStorageUseCase,
+      useClass: StorageUseCase,
+    },
+    {
+      provide: IStorageGateway,
+      useClass: StorageGateway,
+    },
+    {
+      provide: IMessageGateway,
+      useClass: MessageGateway,
+    },
+    {
+      provide: ITaskGateway,
+      useClass: TaskGateway,
     },
     {
       provide: 'SES_CLIENT',

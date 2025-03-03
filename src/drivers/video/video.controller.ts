@@ -33,8 +33,8 @@ import { AuthGuard } from '../../system/guards/authGuard';
 })
 @ApiInternalServerErrorResponse({ description: 'Erro do servidor' })
 @Controller('video')
-@ApiBearerAuth('access-token')
-@UseGuards(AuthGuard)
+// @ApiBearerAuth('access-token')
+// @UseGuards(AuthGuard)
 export class VideoController {
   constructor(private readonly adapter: VideoAdapterController) {}
 
@@ -60,6 +60,7 @@ export class VideoController {
     try {
       return await this.adapter.save(file, req.user?.id, req.user?.email);
     } catch (error) {
+      console.log(error);
       throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
     }
   }

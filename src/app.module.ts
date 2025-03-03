@@ -16,7 +16,7 @@ import { FilterExceptionGlobal } from './system/filtros/filter-exception-global'
     }),
     TypeOrmModule.forRootAsync({
       useClass: PostgresConfigService,
-      inject: [PostgresConfigService],
+      // inject: [PostgresConfigService],
     }),
   ],
   controllers: [],
