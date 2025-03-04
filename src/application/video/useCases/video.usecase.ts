@@ -44,8 +44,8 @@ export class VideoUseCase implements IVideoUseCase {
     console.warn(`Erro ao salvar o vídeo: ${error.message}`);
     try {
       await this.storage.deleteFile(idVideo);
-    } catch (s3Error) {
-      console.warn(`Erro ao excluir o vídeo ${idVideo}:`, s3Error.message);
+    } catch (error) {
+      console.warn(`Erro ao excluir o vídeo ${idVideo}:`, error.message);
     }
 
     try {

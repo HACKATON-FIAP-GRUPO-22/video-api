@@ -12,7 +12,6 @@ export class StorageUseCase implements IStorageUseCase {
     fileBuffer: Buffer,
     mimeType: string,
   ): Promise<void> {
-    console.log('-------------', 'chegou aqui', this.gateway);
     await this.gateway.uploadFile(id, fileBuffer, mimeType);
   }
 
