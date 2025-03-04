@@ -27,4 +27,16 @@ export class VideoDto {
     },
   })
   user: string;
+
+  @ApiProperty({
+    description: 'Status atual do vídeo, sendo: pendente, pronto ou erro',
+    examples: {
+      exemplo: {
+        summary: 'Exemplo de status',
+        description: 'Status do vídeo',
+        value: 'pronto',
+      },
+    },
+  })
+  status: string;
 }

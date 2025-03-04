@@ -76,11 +76,13 @@ describe('VideoController', () => {
           idVideo: 'video1',
           idVideoProcessed: '',
           user: '',
+          status: '',
         },
         {
           idVideo: 'video2',
           idVideoProcessed: '',
           user: '',
+          status: '',
         },
       ];
 

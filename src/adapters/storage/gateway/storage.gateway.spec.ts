@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import {
+  DeleteObjectCommand,
   GetObjectCommand,
   PutObjectCommand,
   S3Client,
@@ -10,7 +11,7 @@ import { StorageGateway } from './storage.gateway';
 jest.mock('@aws-sdk/client-s3');
 
 describe('StorageGateway', () => {
-  let s3UseCase: StorageGateway;
+  let storageGateway: StorageGateway;
   let s3ClientMock: jest.Mocked<S3Client>;
 
   beforeEach(async () => {
@@ -27,10 +28,10 @@ describe('StorageGateway', () => {
       providers: [StorageGateway],
     }).compile();
 
-    s3UseCase = module.get<StorageGateway>(StorageGateway);
+    storageGateway = module.get<StorageGateway>(StorageGateway);
 
     // Pegando o mock real do S3Client dentro da StorageGateway
-    s3ClientMock = s3UseCase['s3'] as jest.Mocked<S3Client>;
+    s3ClientMock = storageGateway['s3'] as jest.Mocked<S3Client>;
   });
 
   afterEach(() => {
@@ -45,7 +46,7 @@ describe('StorageGateway', () => {
 
       (s3ClientMock.send as jest.Mock).mockResolvedValue({});
 
-      await s3UseCase.uploadFile(fileId, fileBuffer, mimeType);
+      await storageGateway.uploadFile(fileId, fileBuffer, mimeType);
 
       expect(s3ClientMock.send).toHaveBeenCalledWith(
         expect.any(PutObjectCommand),
@@ -78,7 +79,7 @@ describe('StorageGateway', () => {
         Body: fileStream,
       });
 
-      const result = await s3UseCase.downloadFile(fileId);
+      const result = await storageGateway.downloadFile(fileId);
 
       expect(s3ClientMock.send).toHaveBeenCalledWith(
         expect.any(GetObjectCommand),
@@ -98,6 +99,32 @@ describe('StorageGateway', () => {
       expect(sentCommand.input).toEqual(expectedCommand.input);
 
       expect(result).toBe(fileStream);
+    });
+  });
+
+  describe('deleteFile', () => {
+    it('should delete file from S3', async () => {
+      const fileId = 'file-id.mp4';
+
+      (s3ClientMock.send as jest.Mock).mockResolvedValue({});
+
+      await storageGateway.deleteFile(fileId);
+
+      expect(s3ClientMock.send).toHaveBeenCalledWith(
+        expect.any(DeleteObjectCommand),
+      );
+
+      // Pegamos o comando passado para `send()`
+      const sentCommand = (s3ClientMock.send as jest.Mock).mock
+        .calls[0][0] as DeleteObjectCommand;
+
+      // Criamos o comando esperado, para comparar o input diretamente
+      const expectedCommand = new DeleteObjectCommand({
+        Bucket: 'test-bucket',
+        Key: fileId,
+      });
+
+      expect(sentCommand.input).toEqual(expectedCommand.input);
     });
   });
 });

@@ -56,11 +56,19 @@ export class VideoUseCase implements IVideoUseCase {
   }
 
   async getVideosByUser(user: string): Promise<Video[]> {
+    if (user === null || user === undefined) {
+      throw new BusinessRuleException('Nenhum logado informado');
+    }
+
     return this.persist.getVideosByUser(user);
   }
 
   async downloadFile(id: string): Promise<Readable> {
-    return await this.storage.downloadFile(id);
+    try {
+      return await this.storage.downloadFile(id);
+    } catch (error) {
+      throw new BusinessRuleException('Erro ao baixar o arquivo informado');
+    }
   }
 
   async updateStatusVideoProcessed(

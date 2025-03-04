@@ -57,6 +57,7 @@ describe('VideoAdapterController', () => {
         idVideo: '123',
         user: userName,
         idVideoProcessed: '',
+        status: '',
       };
 
       (gatewayMock.convertCreateEntity as jest.Mock).mockReturnValue(

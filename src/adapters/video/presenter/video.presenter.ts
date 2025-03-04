@@ -9,6 +9,7 @@ export class VideoPresenter {
     response.idVideo = entity.idVideo;
     response.idVideoProcessed = entity.idVideoProcessed;
     response.user = entity.user;
+    response.status = entity.status;
     return response;
   }
 
