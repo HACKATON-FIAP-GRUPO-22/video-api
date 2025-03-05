@@ -24,6 +24,7 @@ describe('VideoUseCase', () => {
       getVideosByUser: jest.fn(),
       getVideoEntityById: jest.fn(),
       updateStatusVideoProcessed: jest.fn(),
+      getVideosProcessedByUser: jest.fn(),
     };
 
     storageMock = {
@@ -124,8 +125,9 @@ describe('VideoUseCase', () => {
     it('should download file from storage', async () => {
       const stream = new Readable();
       storageMock.downloadFile.mockResolvedValue(stream);
+      persistMock.getVideosProcessedByUser.mockResolvedValue([new Video()]);
 
-      const result = await useCase.downloadFile('video.mp4');
+      const result = await useCase.downloadFile('video.mp4', 'user1');
 
       expect(storageMock.downloadFile).toHaveBeenCalledWith('video.mp4');
       expect(result).toBe(stream);

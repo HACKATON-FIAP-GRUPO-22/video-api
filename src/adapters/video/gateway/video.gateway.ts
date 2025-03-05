@@ -62,6 +62,21 @@ export class VideoGateway implements IVideoData {
     await this.repository.delete({ idVideo });
   }
 
+  async getVideosProcessedByUser(id: string, user: string): Promise<Video[]> {
+    const list = await this.repository.find({
+      where: {
+        user,
+        idVideoProcessed: id,
+      },
+    });
+
+    const videos: Video[] = [];
+    for (const item of list) {
+      videos.push(this.convertDataToEntity(item));
+    }
+    return videos;
+  }
+
   private convertEntityTodata(video: Video) {
     const entity = new VideoEntity();
     entity.idVideo = video.idVideo;

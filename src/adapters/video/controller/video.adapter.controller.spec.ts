@@ -117,9 +117,9 @@ describe('VideoAdapterController', () => {
 
       (useCaseMock.downloadFile as jest.Mock).mockReturnValue(readableStream);
 
-      const result = await controller.downloadFile('video123');
+      const result = await controller.downloadFile('video123', '1');
 
-      expect(useCaseMock.downloadFile).toHaveBeenCalledWith('video123');
+      expect(useCaseMock.downloadFile).toHaveBeenCalledWith('video123', '1');
       expect(result).toBe(readableStream);
     });
   });

@@ -7,6 +7,7 @@ export abstract class IVideoData {
   abstract getVideosByUser(user: string): Promise<Video[]>;
   abstract getVideoEntityById(id: string): Promise<Video>;
   abstract deleteVideo(idVideo: string): Promise<void>;
+  abstract getVideosProcessedByUser(id: string, user: string);
   abstract updateStatusVideoProcessed(
     videoProcessed: VideoProcessed,
   ): Promise<void>;

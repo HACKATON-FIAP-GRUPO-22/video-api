@@ -37,8 +37,8 @@ import { AuthGuard } from '../../system/guards/authGuard';
 })
 @ApiInternalServerErrorResponse({ description: 'Erro do servidor' })
 @Controller('video')
-// @ApiBearerAuth('access-token')
-// @UseGuards(AuthGuard)
+@ApiBearerAuth('access-token')
+@UseGuards(AuthGuard)
 export class VideoController {
   constructor(private readonly adapter: VideoAdapterController) {}
 
@@ -123,8 +123,12 @@ export class VideoController {
     description: 'Arquivo não encontrado',
   })
   @Get('dowload/:id')
-  async downloadFile(@Param('id') id: string, @Res() res: Response) {
-    const fileStream = await this.adapter.downloadFile(id);
+  async downloadFile(
+    @Param('id') id: string,
+    @Res() res: Response,
+    @Req() req: any,
+  ) {
+    const fileStream = await this.adapter.downloadFile(id, req.user?.id);
 
     res.setHeader('Content-Disposition', `attachment; filename="${id}"`);
     res.setHeader('Content-Type', 'application/octet-stream');

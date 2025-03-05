@@ -24,8 +24,8 @@ export class VideoAdapterController {
     return this.presenter.convertArrayEntityToArrayResponseDto(videos);
   }
 
-  async downloadFile(id: string): Promise<Readable> {
-    const file = this.useCase.downloadFile(id);
+  async downloadFile(id: string, user: string): Promise<Readable> {
+    const file = this.useCase.downloadFile(id, user);
     return file;
   }
 }

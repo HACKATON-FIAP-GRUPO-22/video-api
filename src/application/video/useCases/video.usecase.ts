@@ -63,8 +63,14 @@ export class VideoUseCase implements IVideoUseCase {
     return this.persist.getVideosByUser(user);
   }
 
-  async downloadFile(id: string): Promise<Readable> {
+  async downloadFile(id: string, user: string): Promise<Readable> {
     try {
+      const videos = await this.persist.getVideosProcessedByUser(id, user);
+      if (videos.length !== 1) {
+        throw new BusinessRuleException(
+          'Usuário não possui permissão para fazer o download desse arquivo',
+        );
+      }
       return await this.storage.downloadFile(id);
     } catch (error) {
       throw new BusinessRuleException('Erro ao baixar o arquivo informado');

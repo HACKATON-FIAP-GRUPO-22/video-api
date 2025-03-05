@@ -12,36 +12,25 @@ export class TaskUseCase implements ITaskUseCase {
   ) {}
 
   async processListVideos() {
-    do {
-      try {
-        const messages = await this.gateway.getVideosForProcessed();
+    try {
+      const messages = await this.gateway.getVideosForProcessed();
 
-        if (messages && messages.length > 0) {
-          for (const message of messages) {
-            console.log(
-              'MessageConnectService: mensagem recebida ',
-              message.Body,
-            );
+      if (messages && messages.length > 0) {
+        for (const message of messages) {
+          console.log('TaskUseCase: mensagem recebida ', message.Body);
 
-            try {
-              const video: VideoProcessed = { ...JSON.parse(message.Body) };
-              await this.videoUseCase.updateStatusVideoProcessed(video);
-            } catch (error) {
-              console.error(
-                'MessageConnectService: Erro ao processar mensagem:',
-                error,
-              );
-            }
-            await this.gateway.deleteVideoTask(message.ReceiptHandle);
+          try {
+            const video: VideoProcessed = { ...JSON.parse(message.Body) };
+            await this.videoUseCase.updateStatusVideoProcessed(video);
+          } catch (error) {
+            console.error('TaskUseCase: Erro ao processar mensagem:', error);
           }
+          await this.gateway.deleteVideoTask(message.ReceiptHandle);
         }
-      } catch (error) {
-        console.error(
-          'MessageConnectService: Erro ao receber mensagens:',
-          error,
-        );
       }
-    } while (true);
+    } catch (error) {
+      console.error('TaskUseCase: Erro ao receber mensagens:', error);
+    }
   }
 
   async sendVideo(messageBody: string): Promise<void> {
