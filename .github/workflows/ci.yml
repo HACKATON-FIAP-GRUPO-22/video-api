@@ -39,7 +39,7 @@ jobs:
     
     - name: Commit and push changes
       run: |
-        git config --global user.email "github-actions@github.com"
+        git config --global user.email "edsontecno@gmail.com"
         git config --global user.name "GitHub Actions"
         
         # Adiciona os arquivos ao git
