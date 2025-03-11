@@ -78,33 +78,43 @@ jobs:
 
       - name: Logout from Docker Hub
         run: docker logout
-  # deploy:
-  #   runs-on: ubuntu-latest 
-  #   needs: build     
+  deploy:
+    runs-on: ubuntu-latest 
+    needs: build     
     
-  #   steps:
-  #     - name: Checkout code
-  #       uses: actions/checkout@v4
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-  #     - name: Configure AWS credentials
-  #       uses: aws-actions/configure-aws-credentials@v4
-  #       with:
-  #         aws-access-key-id: ${{ secrets.AWS_ACADEMY_ACCESS_KEY_ID }}
-  #         aws-secret-access-key: ${{ secrets.AWS_ACADEMY_SECRET_ACCESS_KEY }}
-  #         aws-session-token: ${{ secrets.AWS_ACADEMY_SESSION_TOKEN }}
-  #         aws-region: ${{ secrets.AWS_ACADEMY_REGION_DEFAULT }}  
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACADEMY_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_ACADEMY_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_ACADEMY_SESSION_TOKEN }}
+          aws-region: ${{ secrets.AWS_ACADEMY_REGION_DEFAULT }}  
       
-  #     - name: Update Kube Config
-  #       run: aws eks update-kubeconfig --name ${{ secrets.CLUSTER_NAME }} --region ${{ secrets.AWS_ACADEMY_REGION_DEFAULT }}
+      - name: Update Kube Config
+        run: aws eks update-kubeconfig --name ${{ secrets.CLUSTER_NAME }} --region ${{ secrets.AWS_ACADEMY_REGION_DEFAULT }}
 
-  #     - name: Deploy EKS
-  #       run: |
-  #         kubectl delete secret db-credentials --ignore-not-found
-  #         kubectl create secret generic db-credentials --from-literal=username=${{ secrets.USER_BD}} --from-literal=password=${{ secrets.PASSWORD_DB}} --from-literal=host=${{ secrets.HOST_DB}}
-  #         kubectl apply -f ./k8s/deployment-app.yml
-  #         kubectl apply -f ./k8s/service-app.yml    
-  #         kubectl apply -f ./k8s/hpa.yml    
+      - name: Deploy EKS
+        run: |
+          kubectl delete secret db-credentials --ignore-not-found
+          kubectl create secret generic db-credentials \
+            --from-literal=username=${{ secrets.USER_BD}} \
+            --from-literal=password=${{ secrets.PASSWORD_DB}} \
+            --from-literal=host=${{ secrets.HOST_DB}}\
+            --from-literal=AWS_REGION=${{ secrets.AWS_ACADEMY_REGION_DEFAULT}}\
+            --from-literal=AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACADEMY_ACCESS_KEY_ID}}\
+            --from-literal=AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_ACADEMY_SECRET_ACCESS_KEY}}\
+            --from-literal=AWS_SESSION_TOKEN=${{ secrets.AWS_ACADEMY_SESSION_TOKEN}}\
+            --from-literal=AWS_SQS_ENDPOINT=${{ secrets.AWS_SQS_ENDPOINT}}\
+            --from-literal=AWS_SES_FROM_EMAIL=${{ secrets.HAWS_SES_FROM_EMAILOST_DB}}
 
-  #     - name: Update Kubernetes Deployment
-  #       run: |
-  #         kubectl set image deployment/dominio-app dominio-app=${{ secrets.DOCKER_USERNAME }}/video-api:${{ github.sha }} --record
+          kubectl apply -f ./k8s/deployment-app.yml
+          kubectl apply -f ./k8s/service-app.yml    
+          kubectl apply -f ./k8s/hpa.yml    
+
+      - name: Update Kubernetes Deployment
+        run: |
+          kubectl set image deployment/video-api video-api=${{ secrets.DOCKER_USERNAME }}/video-api:${{ github.sha }} --record

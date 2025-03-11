@@ -1,20 +1,20 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: dominio-app
+  name: video-api
 spec:
   replicas: 2  # Quantidade de réplicas da aplicação
   selector:
     matchLabels:
-      app: dominio-app  # Seleciona pods com essa label
+      app: video-api  # Seleciona pods com essa label
   template:
     metadata:
       labels:
-        app: dominio-app  # Associa esse label ao pod criado
+        app: video-api  # Associa esse label ao pod criado
     spec:
       containers:
-      - name: dominio-app
-        image: edsontecno/fiap-dominio:latest  # Imagem do Node.js 
+      - name: video-api
+        image: edsontecno/video-api:latest  # Imagem do Node.js 
         ports:
         - containerPort: 3000  # Porta exposta pela aplicação
         resources:
@@ -50,3 +50,41 @@ spec:
           value: admin@root.com
         - name: NODE_ENV
           value: production
+        - name: AWS_REGION
+          valueFrom:
+            secretKeyRef:
+              name: db-credentials
+              key: AWS_REGION
+
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: db-credentials
+              key: AWS_ACCESS_KEY_ID
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: db-credentials
+              key: AWS_SECRET_ACCESS_KEY
+        - name: AWS_SESSION_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: db-credentials
+              key: AWS_SESSION_TOKEN          
+        - name: AWS_S3_BUCKET_NAME
+          value: repo-videos-fiap
+        - name: QUEUE_PROCESSAR
+          value: processar
+        - name: QUEUE_PROCESSADOS
+          value: processados 
+        - name: AWS_SQS_ENDPOINT
+          valueFrom:
+            secretKeyRef:
+              name: db-credentials
+              key: AWS_SQS_ENDPOINT
+        - name: AWS_SES_FROM_EMAIL
+          valueFrom:
+            secretKeyRef:
+              name: db-credentials
+              key: AWS_SES_FROM_EMAIL
+
