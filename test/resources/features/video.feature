@@ -1,7 +1,4 @@
 Feature: Gerenciamento de Vídeos
-  Como um usuário autenticado
-  Eu quero fazer upload, listar e baixar vídeos
-  Para que eu possa gerenciar meus arquivos
 
   Scenario: Upload de um vídeo válido
     Given que o usuário está autenticado
