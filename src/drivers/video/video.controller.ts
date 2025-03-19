@@ -94,7 +94,7 @@ export class VideoController {
   @ApiTags('Arquivos')
   @ApiParam({
     name: 'id',
-    type: Number,
+    type: String,
     description: 'ID do vídeo que deseja realizar o download',
     examples: {
       Video1: {
