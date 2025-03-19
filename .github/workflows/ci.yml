@@ -31,24 +31,24 @@ jobs:
       run: |
         npx sonarqube-scanner  
 
-  # BDD:
-  #   needs: test
-  #   runs-on: ubuntu-latest
+  BDD:
+    needs: test
+    runs-on: ubuntu-latest
 
-  #   steps:
-  #   - name: Checkout Code
-  #     uses: actions/checkout@v4
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
 
-  #   - name: Set up Node.js
-  #     uses: actions/setup-node@v4
-  #     with:
-  #       node-version: 18  
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 18  
 
-  #   - name: Install Dependencies
-  #     run: npm install
+    - name: Install Dependencies
+      run: npm install
   
-  #   - name: Run Tests
-  #     run: npm run test:cucumber         
+    - name: Run Tests
+      run: npm run test:cucumber         
 
 
   build:
