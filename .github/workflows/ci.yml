@@ -109,7 +109,7 @@ jobs:
             --from-literal=AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_ACADEMY_SECRET_ACCESS_KEY}}\
             --from-literal=AWS_SESSION_TOKEN=${{ secrets.AWS_ACADEMY_SESSION_TOKEN}}\
             --from-literal=AWS_SQS_ENDPOINT=${{ secrets.AWS_SQS_ENDPOINT}}\
-            --from-literal=AWS_SES_FROM_EMAIL=${{ secrets.HAWS_SES_FROM_EMAILOST_DB}}
+            --from-literal=AWS_SES_FROM_EMAIL=${{ secrets.AWS_SES_FROM_EMAIL}}
 
           kubectl apply -f ./k8s/deployment-app.yml
           kubectl apply -f ./k8s/service-app.yml    
