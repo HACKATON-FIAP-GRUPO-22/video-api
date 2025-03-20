@@ -54,7 +54,7 @@ export class VideoGateway implements IVideoData {
     }
 
     entity.status = videoProcessed.status;
-    entity.idVideoProcessed = videoProcessed.id;
+    entity.idVideoProcessed = `${videoProcessed.id}_processed`;
     await this.repository.save(entity);
   }
 
