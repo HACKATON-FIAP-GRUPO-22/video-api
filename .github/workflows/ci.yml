@@ -108,6 +108,8 @@ jobs:
             --from-literal=AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACADEMY_ACCESS_KEY_ID}}\
             --from-literal=AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_ACADEMY_SECRET_ACCESS_KEY}}\
             --from-literal=AWS_SESSION_TOKEN=${{ secrets.AWS_ACADEMY_SESSION_TOKEN}}\
+            --from-literal=AWS_PESSOAL_ACCESS_KEY_ID=${{ secrets.AWS_PESSOAL_ACCESS_KEY_ID}}\
+            --from-literal=AWS_PESSOAL_SECRET_ACCESS_KEY=${{ secrets.AWS_PESSOAL_SECRET_ACCESS_KEY}}\
             --from-literal=AWS_SQS_ENDPOINT=${{ secrets.AWS_SQS_ENDPOINT}}\
             --from-literal=AWS_SES_FROM_EMAIL=${{ secrets.AWS_SES_FROM_EMAIL}}
 
