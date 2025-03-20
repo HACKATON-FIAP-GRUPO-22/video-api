@@ -111,6 +111,7 @@ describe('VideoGateway', () => {
     it('should update video status', async () => {
       const videoProcessed = new VideoProcessed();
       videoProcessed.id = '123';
+      videoProcessed.idVideoProcessed = '123_processed';
       videoProcessed.status = 'pronto';
 
       const videoEntity = new VideoEntity();
@@ -123,7 +124,7 @@ describe('VideoGateway', () => {
       expect(repositoryMock.findOneBy).toHaveBeenCalledWith({ idVideo: '123' });
       expect(repositoryMock.save).toHaveBeenCalledWith(
         expect.objectContaining({
-          idVideoProcessed: '123',
+          idVideoProcessed: '123_processed',
           status: 'pronto',
         }),
       );
