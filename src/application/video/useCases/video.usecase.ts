@@ -73,6 +73,7 @@ export class VideoUseCase implements IVideoUseCase {
       }
       return await this.storage.downloadFile(id);
     } catch (error) {
+      console.log(error);
       throw new BusinessRuleException('Erro ao baixar o arquivo informado');
     }
   }
