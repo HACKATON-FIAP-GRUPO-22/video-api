@@ -96,6 +96,7 @@ export class VideoGateway implements IVideoData {
     video.idVideoProcessed = videoEntity.idVideoProcessed;
     video.user = videoEntity.user;
     video.status = getEnumFromString(videoEntity.status);
+    video.userEmail = videoEntity.userEmail;
     return video;
   }
 

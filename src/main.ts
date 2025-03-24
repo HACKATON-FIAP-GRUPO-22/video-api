@@ -20,7 +20,7 @@ export async function bootstrap() {
     .addTag('Hackaton')
     .addServer('http://localhost:3000')
     .addServer(
-      'http://adcb5fa8a5aef43b69acadab5626b219-1932759888.us-east-1.elb.amazonaws.com:3000',
+      'http://aa43e3101189c4e0eaa3cbdac53bbcce-695933811.us-east-1.elb.amazonaws.com:3000',
     )
     .build();
   const document = SwaggerModule.createDocument(app, config);
