@@ -69,6 +69,7 @@ describe('TaskGateway', () => {
       expect(SendMessageCommand).toHaveBeenCalledWith({
         QueueUrl: process.env.QUEUE_PROCESSAR,
         MessageBody: messageBody,
+        MessageGroupId: 'grupo1',
       });
 
       expect(sqsClientMock.send).toHaveBeenCalledWith(
