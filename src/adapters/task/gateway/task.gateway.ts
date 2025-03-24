@@ -30,7 +30,7 @@ export class TaskGateway implements ITaskGateway {
       QueueUrl: process.env.QUEUE_PROCESSADOS,
       MaxNumberOfMessages: this.maxMessage,
       WaitTimeSeconds: 20,
-      VisibilityTimeout: 10,
+      VisibilityTimeout: 3000,
     });
 
     const response = await this.client.send(command);
