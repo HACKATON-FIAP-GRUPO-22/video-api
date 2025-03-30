@@ -44,3 +44,9 @@ Todos os endpoint estão documentos utilizando o Swagger, o endereço disponíve
 
 ## Testes realizados
 ![teste](docs/testes.png)
+
+## Testes de BDD
+
+Os testes de BDD são executados utilizando o Cucumber. Abaixo está uma evidência dos testes:
+
+![Evidência dos Testes de BDD](bdd.png)
